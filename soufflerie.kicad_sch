@@ -7704,6 +7704,12 @@
 		(uuid "56be3319-cbc2-4d1d-ad8b-1ff02c8785ff")
 	)
 	(junction
+		(at 375.92 60.96)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5a0ed0ef-6040-4a25-b20e-a49f6bd0dcde")
+	)
+	(junction
 		(at 238.76 231.14)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -8034,10 +8040,6 @@
 		(uuid "7ddb2d87-eb14-4b60-9ea7-b5ed7d5522af")
 	)
 	(no_connect
-		(at 378.46 60.96)
-		(uuid "93ea36f9-bb8f-432a-893c-06e73cb65568")
-	)
-	(no_connect
 		(at 245.11 74.93)
 		(uuid "98ee633d-a8d2-45d6-aedd-8b7b6a0eeab2")
 	)
@@ -8262,6 +8264,16 @@
 			(type default)
 		)
 		(uuid "14c0151b-5158-4c8e-84c8-4aa48d3ca2ae")
+	)
+	(wire
+		(pts
+			(xy 375.92 60.96) (xy 378.46 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "14cd2ff2-1cc0-4f64-806b-9b229e83ceca")
 	)
 	(wire
 		(pts
@@ -11162,17 +11174,6 @@
 			(type none)
 		)
 		(uuid d5fbfcc1-02a1-454b-9e80-5ed270c24152)
-	)
-	(text "Connecting die pad to GND is optional.\nThe hole is the center must stay open,\nprobably safer not to solder it."
-		(exclude_from_sim no)
-		(at 368.046 65.532 0)
-		(effects
-			(font
-				(size 1.016 1.016)
-			)
-			(justify left)
-		)
-		(uuid "2f45a8e3-57e4-465e-b88d-26750662b9a1")
 	)
 	(text "Interfaces"
 		(exclude_from_sim no)
