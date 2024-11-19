@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "./build/ch.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "bmp",
+            "BMPGDBSerialPort": "/dev/bmp-gdb",
+            "svdFile": "/home/fabien/Documents/datasheets/MCUs/SVDs/STM32F722.svd",
+            "preLaunchTask": "Build $(gear)"
+        },
+        {
+            "name": "Cortex Attach",
+            "cwd": "${workspaceFolder}",
+            "executable": "./build/ch.elf",
+            "request": "attach",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "bmp",
+            "BMPGDBSerialPort": "/dev/bmp-gdb",
+            "svdFile": "/home/fabien/Documents/datasheets/MCUs/SVDs/STM32F722.svd",
+            "preLaunchTask": "Build $(gear)"
+        }
+    ]
+}
