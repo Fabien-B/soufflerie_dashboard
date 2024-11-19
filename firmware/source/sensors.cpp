@@ -4,6 +4,7 @@
 #include "stdutil++.hpp"
 extern "C" {
     #include "i2cPeriphBMP3XX.h"
+    #include "i2cPeriphSDP3X.h"
 }
 
 // Digital noise filter: 0 disabled, [0x1 - 0xF] enable up to n t_I2CCLK
@@ -16,7 +17,7 @@ I2CConfig i2c1_conf = {
 };
 
 
-Bmp3xxDriver bmp3p;
+Bmp3xxDriver bmp3;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 Bmp3xxConfig bmp3_conf = {
@@ -37,26 +38,48 @@ Bmp3xxConfig bmp3_conf = {
 };
 #pragma GCC diagnostic pop
 
+
+Sdp3xDriver sdp;
+
 static THD_WORKING_AREA(waSensors, 1000);
 
 static void sensorsThd(void*) {
     chRegSetThreadName("sensorsThd");
 
     i2cStart(&I2CD1, &i2c1_conf);
-    if(bmp3xxStart(&bmp3p, &bmp3_conf) == MSG_OK) {
+    if(bmp3xxStart(&bmp3, &bmp3_conf) == MSG_OK) {
         DebugTrace ("bmp init OK");
     } else {
         DebugTrace ("bmp init FAIL");
     }
 
+
+    sdp3xStart(&sdp, &I2CD1, SDP3X_ADDRESS1);
+    sdp3xStop(&sdp);
+    // get scale
+    sdp3xRequest(&sdp, SDP3X_pressure_temp_scale_oneshot);
+    sdp3xFetch(&sdp, SDP3X_pressure_temp_scale_oneshot);
+    // request continuous pressure
+    sdp3xRequest(&sdp, SDP3X_pressure_temp);
+    
+
     while(true) {
-        if (bmp3xxFetch(&bmp3p, BMP3_PRESS | BMP3_TEMP) == MSG_OK) {
+        if (bmp3xxFetch(&bmp3, BMP3_PRESS | BMP3_TEMP) == MSG_OK) {
             DebugTrace("Temp =%.2f, Press=%.2f mB",
-            bmp3xxGetTemp(&bmp3p), bmp3xxGetPressure(&bmp3p)/100.0f);
-        
+            bmp3xxGetTemp(&bmp3), bmp3xxGetPressure(&bmp3)/100.0f);
         } else {
             DebugTrace ("bmp fetch FAIL");
         }
+
+
+        if(sdp3xFetch(&sdp, SDP3X_pressure_temp) == MSG_OK) {
+            float dp = sdp3xGetPressure(&sdp);
+            float scale = sdp3xGetScale(&sdp);
+            DebugTrace("diff = %.2f  scale=%f", dp, scale);
+        } else {
+            DebugTrace ("SDP31 fetch FAIL");
+        }
+
         chThdSleepMilliseconds(500);
     }
 
@@ -64,11 +87,15 @@ static void sensorsThd(void*) {
 
 
 float getTemp() {
-    return bmp3xxGetTemp(&bmp3p);
+    return bmp3xxGetTemp(&bmp3);
 }
 
 float getAbsolutePressure() {
-    return bmp3xxGetPressure(&bmp3p)/100.0f;
+    return bmp3xxGetPressure(&bmp3)/100.0f;
+}
+
+float getDiffPressure() {
+    return sdp3xGetPressure(&sdp);
 }
 
 

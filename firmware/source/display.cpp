@@ -38,12 +38,14 @@ void displayThd(void*) {
     while(true) {
         float temp = getTemp();
         float pressure = getAbsolutePressure();
+        float diff_p = getDiffPressure();
+
         fdsGotoXY(&fds, 5, 5);
-        fdsPrintFmt(&fds, "%02f C", temp);
+        fdsPrintFmt(&fds, "%7.2f Pa", diff_p);
         fdsGotoXY(&fds, 5, 7);
-        fdsPrintFmt(&fds, "%02f C", temp);
+        fdsPrintFmt(&fds, "  %6.2f C", temp);
         fdsGotoXY(&fds, 5, 9);
-        fdsPrintFmt(&fds, "%01f hPa", pressure);
+        fdsPrintFmt(&fds, "%6.1f hPa", pressure);
 
         chThdSleepMilliseconds(200);
     }

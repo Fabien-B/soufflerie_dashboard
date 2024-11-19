@@ -122,6 +122,7 @@ CSRC = $(ALLCSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(VARIOUS)/stdutil.c \
        $(VARIOUS)/i2cPeriphBMP3XX.c \
+       $(VARIOUS)/i2cPeriphSDP3X.c \
        $(VARIOUS)/quadEncoder.c \
        $(VARIOUS)/printf.c \
        $(VARIOUS)/display4DS.c
