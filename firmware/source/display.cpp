@@ -17,14 +17,21 @@ void displayThd(void*) {
     fdsSetTextFgColorTable(&fds, 2, GREEN);
 
     chThdSleepMilliseconds(20);
+    fdsDrawLine(&fds, 0, 65,  240, 65,  2);
     fdsDrawLine(&fds, 0, 110, 240, 110, 2);
     fdsDrawLine(&fds, 0, 155, 240, 155, 2);
     fdsDrawLine(&fds, 0, 200, 240, 200, 2);
-    fdsDrawLine(&fds, 72, 110, 72, 240, 2);
-
+    fdsDrawLine(&fds, 72, 65, 72, 240, 2);
+    
+    fdsGotoXY(&fds, 0, 6);
+    fdsPrintBuffer(&fds, " tunnel");
+    fdsGotoXY(&fds, 0, 7);
+    fdsPrintBuffer(&fds, "  temp");
     fdsGotoXY(&fds, 0, 10);
     fdsPrintBuffer(&fds, "  diff_p");
     fdsGotoXY(&fds, 0, 14);
+    fdsPrintBuffer(&fds, "   board");
+    fdsGotoXY(&fds, 0, 15);
     fdsPrintBuffer(&fds, "    temp");
     fdsGotoXY(&fds, 0, 18);
     fdsPrintBuffer(&fds, "pressure");
@@ -36,10 +43,13 @@ void displayThd(void*) {
     fdsSetTextFgColor(&fds, WHITE);
 
     while(true) {
+        float tunnel_temp = getTunnelTemp();
         float temp = getTemp();
         float pressure = getAbsolutePressure();
         float diff_p = getDiffPressure();
 
+        fdsGotoXY(&fds, 5, 3);
+        fdsPrintFmt(&fds, "  %6.2f C", tunnel_temp);
         fdsGotoXY(&fds, 5, 5);
         fdsPrintFmt(&fds, "%7.2f Pa", diff_p);
         fdsGotoXY(&fds, 5, 7);

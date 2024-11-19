@@ -7,3 +7,5 @@ float getTemp();
 float getAbsolutePressure();
 
 float getDiffPressure();
+
+float getTunnelTemp();

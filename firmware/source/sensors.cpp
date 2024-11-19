@@ -5,12 +5,19 @@
 extern "C" {
     #include "i2cPeriphBMP3XX.h"
     #include "i2cPeriphSDP3X.h"
+    #include "i2cPeriphSHT4x.h"
 }
 
 // Digital noise filter: 0 disabled, [0x1 - 0xF] enable up to n t_I2CCLK
 #define STM32_CR1_DNF(n)          ((n & 0x0f) << 8)
 
 I2CConfig i2c1_conf = {
+    .timingr = 0x0080195B,      // 50ns rise time, 10ns fall time, DNF=2 (au pif)
+    .cr1 = STM32_CR1_DNF(2),    // au pif
+    .cr2 = 0
+};
+
+I2CConfig i2c2_conf = {
     .timingr = 0x0080195B,      // 50ns rise time, 10ns fall time, DNF=2 (au pif)
     .cr1 = STM32_CR1_DNF(2),    // au pif
     .cr2 = 0
@@ -40,6 +47,7 @@ Bmp3xxConfig bmp3_conf = {
 
 
 Sdp3xDriver sdp;
+Sht4xDriver sht;
 
 static THD_WORKING_AREA(waSensors, 1000);
 
@@ -47,6 +55,8 @@ static void sensorsThd(void*) {
     chRegSetThreadName("sensorsThd");
 
     i2cStart(&I2CD1, &i2c1_conf);
+    i2cStart(&I2CD2, &i2c2_conf);
+
     if(bmp3xxStart(&bmp3, &bmp3_conf) == MSG_OK) {
         DebugTrace ("bmp init OK");
     } else {
@@ -61,11 +71,16 @@ static void sensorsThd(void*) {
     sdp3xFetch(&sdp, SDP3X_pressure_temp_scale_oneshot);
     // request continuous pressure
     sdp3xRequest(&sdp, SDP3X_pressure_temp);
+
+    sht4xStart(&sht, &I2CD2, SHT4X_ADDRESS1);
+
+    sht4xSend(&sht, SHT4x_READ_IDENT);
+    sht4xFetch(&sht);
     
 
     while(true) {
         if (bmp3xxFetch(&bmp3, BMP3_PRESS | BMP3_TEMP) == MSG_OK) {
-            DebugTrace("Temp =%.2f, Press=%.2f mB",
+            DebugTrace("Temp=%.2f, Press=%.2f mB",
             bmp3xxGetTemp(&bmp3), bmp3xxGetPressure(&bmp3)/100.0f);
         } else {
             DebugTrace ("bmp fetch FAIL");
@@ -79,6 +94,21 @@ static void sensorsThd(void*) {
         } else {
             DebugTrace ("SDP31 fetch FAIL");
         }
+
+
+        if(sht4xSend(&sht, SHT4x_TEMP_RH_HI) == MSG_OK) {
+            chThdSleepMilliseconds(10);
+            if(sht4xFetch(&sht) == MSG_OK) {
+                float temp = sht4xGetTemp(&sht);
+                float rh = sht4xGetRH(&sht);
+                DebugTrace("temp = %.2f  rh=%.2f", temp, rh);
+            } else {
+                DebugTrace ("SHT45 fetch command failed");
+            }
+        } else {
+            DebugTrace ("SHT45 send command failed");
+        }
+        
 
         chThdSleepMilliseconds(500);
     }
@@ -98,7 +128,10 @@ float getDiffPressure() {
     return sdp3xGetPressure(&sdp);
 }
 
-
+float getTunnelTemp()
+{
+    return sht4xGetTemp(&sht);
+}
 
 void startSensors() {
     chThdCreateStatic(waSensors, sizeof(waSensors), NORMALPRIO + 1, sensorsThd, NULL);
