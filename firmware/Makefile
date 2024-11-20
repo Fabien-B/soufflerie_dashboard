@@ -111,6 +111,8 @@ include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
 # Auto-build files in ./source recursively.
 include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
+include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
+include $(VARIOUS)/tlsf_bku/tlsf.mk
 
 # Define linker script file here
 LDSCRIPT= $(STARTUPLD)/STM32F722xE.ld
@@ -119,14 +121,17 @@ LDSCRIPT= $(STARTUPLD)/STM32F722xE.ld
 # setting.
 CSRC = $(ALLCSRC) \
        $(TESTSRC) \
+       $(TLSFSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(VARIOUS)/stdutil.c \
        $(VARIOUS)/i2cPeriphBMP3XX.c \
        $(VARIOUS)/i2cPeriphSDP3X.c \
        $(VARIOUS)/quadEncoder.c \
+       $(VARIOUS)/sdLog.c \
+       $(VARIOUS)/sdio.c \
+       $(VARIOUS)/msg_queue.c \
        $(VARIOUS)/printf.c \
        $(VARIOUS)/display4DS.c
-
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -139,7 +144,7 @@ ASMSRC = $(ALLASMSRC)
 ASMXSRC = $(ALLXASMSRC)
 
 # Inclusion directories.
-INCDIR = $(CONFDIR) $(ALLINC) $(TESTINC) $(VARIOUS)
+INCDIR = $(CONFDIR) $(ALLINC) $(TESTINC) $(VARIOUS) $(FATFSINC) $(TLSFINC)
 
 # Define C warning options here.
 CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes

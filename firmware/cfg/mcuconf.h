@@ -270,7 +270,7 @@
 /*
  * SDC driver system settings.
  */
-#define STM32_SDC_USE_SDMMC1                FALSE
+#define STM32_SDC_USE_SDMMC1                TRUE
 #define STM32_SDC_USE_SDMMC2                FALSE
 #define STM32_SDC_SDMMC_UNALIGNED_SUPPORT   TRUE
 #define STM32_SDC_SDMMC_WRITE_TIMEOUT       10000
@@ -406,6 +406,12 @@
 #define TRACE           TRUE
 
 #define CH_HEAP_SIZE (32*1024)
-#define CH_HEAP_USE_TLSF 0
+#define CH_HEAP_USE_TLSF 1
+
+
+#define SDLOG_QUEUE_BUCKETS    1024
+#define SDLOG_MAX_MESSAGE_LEN  300
+#define SDLOG_NUM_FILES        2
+#define SDLOG_ALL_BUFFERS_SIZE (SDLOG_NUM_FILES*16*1024)
 
 #endif /* MCUCONF_H */

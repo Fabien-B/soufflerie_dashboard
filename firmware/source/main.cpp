@@ -19,6 +19,7 @@
 #include "display.h"
 #include "stdutil++.hpp"
 #include "sensors.h"
+#include "sd.h"
 
 
 SerialConfig sd6_conf = {
@@ -62,6 +63,7 @@ int main(void) {
    */
   halInit();
   chSysInit();
+  initHeap();
 
   sdStart(&SD6, &sd6_conf);
   startSensors();
