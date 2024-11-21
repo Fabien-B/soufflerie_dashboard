@@ -169,6 +169,9 @@ static void telegram_received(UARTDriver *uartp) {
  */
 static void residual_timeout_cb(GPTDriver *gptp) {
     USSDriver* ussp = (USSDriver*)gptp->ussp;
+    chSysLockFromISR();
+    uartStopReceiveI(ussp->config->uartp);
+    chSysUnlockFromISR();
     ussp->rxState = USS_RX_STX;
 }
 
