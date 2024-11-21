@@ -40,7 +40,11 @@ void logThd(void*) {
     float pressure = getAbsolutePressure();
     float diff_p = getDiffPressure();
 
-    sdLogWriteLog(0, "%f,%f,%f,%f\n", tunnel_temp, temp, diff_p, pressure);
+    if(sdLogWriteLog(0, "%f,%f,%f,%f\n", tunnel_temp, temp, diff_p, pressure) != SDLOG_OK) {
+      sdLogCloseLog(0);   // try to close log, but will probably fail
+      log_status = false;
+      return;
+    }
 
     chThdSleepMilliseconds(500);    
   }

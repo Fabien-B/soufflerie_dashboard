@@ -133,6 +133,12 @@ float getTunnelTemp()
     return sht4xGetTemp(&sht);
 }
 
+float getAirspeed()
+{
+    // TODO calculer airspeed
+    return getDiffPressure() + 12 + getTunnelTemp()/10.0;
+}
+
 void startSensors() {
     chThdCreateStatic(waSensors, sizeof(waSensors), NORMALPRIO + 1, sensorsThd, NULL);
 }

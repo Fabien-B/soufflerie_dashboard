@@ -9,3 +9,5 @@ float getAbsolutePressure();
 float getDiffPressure();
 
 float getTunnelTemp();
+
+float getAirspeed();
