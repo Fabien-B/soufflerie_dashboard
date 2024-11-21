@@ -31,8 +31,7 @@ typedef enum {
 
 typedef struct {
     UARTDriver* uartp;      // UART driver
-    UARTConfig uartConfig;  // UART config
-    GPTConfig  gptConfig;   // GPT driver config
+    GPTDriver* gpt;
     uint32_t speed;         // UART baudrate
     uint8_t node_nb;        // node id
     usscb_t standard_cb;    // standard telegram received callback
@@ -50,7 +49,9 @@ typedef struct {
 } __attribute__((packed)) Telegram_t;
 
 struct USSDriver_private{
-    USSConfig* config;
+    const USSConfig* config;
+    UARTConfig uartConfig;  // UART config
+    GPTConfig  gptConfig;   // GPT driver config
     USSRxState rxState;
     USSTxState txState;
     USSError status;
@@ -62,7 +63,7 @@ struct USSDriver_private{
     thread_t tx_thread;
     THD_WORKING_AREA(waTxThread, 512);
 
-    GPTDriver* gpt;
+    
 };
 
 

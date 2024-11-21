@@ -91,7 +91,7 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
         chSysLockFromISR();
         uartStartReceiveI(uartp, ussp->rxTelegram.lge, (uint8_t*)&ussp->rxTelegram.adr);
         uint16_t residual_time = 1.5*ussp->rxTelegram.lge*11;
-        gptStartOneShotI(ussp->gpt, residual_time);
+        gptStartOneShotI(ussp->config->gpt, residual_time);
         chSysUnlockFromISR();
         ussp->rxState = USS_RX_RESIDUAL;
     }
@@ -122,7 +122,7 @@ static void telegram_received(UARTDriver *uartp) {
     USSDriver* ussp = (USSDriver*)uartp->ussp;
     // cancel the residual time timeout
     chSysLockFromISR();
-    gptStopTimerI(ussp->gpt);
+    gptStopTimerI(ussp->config->gpt);
     chSysUnlockFromISR();
     
 
@@ -208,26 +208,26 @@ void data_process(USSDriver *ussp) {
  */
 
 
-void ussStart(USSDriver *ussp, USSConfig *usscfg)
+void ussStart(USSDriver *ussp, const USSConfig *usscfg)
 {
     // UART driver config
-    usscfg->uartConfig.txend1_cb = NULL;                // End of transmission buffer callback.
-    usscfg->uartConfig.txend2_cb = telegram_sent;       //Physical end of transmission callback.
-    usscfg->uartConfig.rxend_cb = telegram_received;    //Receive buffer filled callback.
-    usscfg->uartConfig.rxchar_cb = char_received;       //Character received while out if the @p UART_RECEIVE state.
-    usscfg->uartConfig.rxerr_cb = error_cb;             //Receive error callback.
-    usscfg->uartConfig.timeout_cb = NULL;
-    usscfg->uartConfig.timeout = 0;
-    usscfg->uartConfig.speed = usscfg->speed;
-    usscfg->uartConfig.cr1 = USART_CR1_PCE;
-    usscfg->uartConfig.cr2 = USART_CR2_STOP1_BITS | USART_CR2_LINEN;
-    usscfg->uartConfig.cr3 = 0;
+    ussp->uartConfig.txend1_cb = NULL;                // End of transmission buffer callback.
+    ussp->uartConfig.txend2_cb = telegram_sent;       //Physical end of transmission callback.
+    ussp->uartConfig.rxend_cb = telegram_received;    //Receive buffer filled callback.
+    ussp->uartConfig.rxchar_cb = char_received;       //Character received while out if the @p UART_RECEIVE state.
+    ussp->uartConfig.rxerr_cb = error_cb;             //Receive error callback.
+    ussp->uartConfig.timeout_cb = NULL;
+    ussp->uartConfig.timeout = 0;
+    ussp->uartConfig.speed = usscfg->speed;
+    ussp->uartConfig.cr1 = USART_CR1_PCE;
+    ussp->uartConfig.cr2 = USART_CR2_STOP1_BITS | USART_CR2_LINEN;
+    ussp->uartConfig.cr3 = 0;
 
     // GPT driver config
-    usscfg->gptConfig.frequency = usscfg->speed;
-    usscfg->gptConfig.callback = residual_timeout_cb;
-    usscfg->gptConfig.cr2 = 0;
-    usscfg->gptConfig.dier = 0;
+    ussp->gptConfig.frequency = usscfg->speed;
+    ussp->gptConfig.callback = residual_timeout_cb;
+    ussp->gptConfig.cr2 = 0;
+    ussp->gptConfig.dier = 0;
 
     ussp->config = usscfg;
     usscfg->uartp->ussp = ussp;
@@ -237,6 +237,6 @@ void ussStart(USSDriver *ussp, USSConfig *usscfg)
     chBSemObjectInit(&ussp->tx_sem, true);
 
     chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
-    uartStart(ussp->config->uartp, &usscfg->uartConfig);
-    gptStart(ussp->gpt, &usscfg->gptConfig);
+    uartStart(ussp->config->uartp, &ussp->uartConfig);
+    gptStart(ussp->config->gpt, &ussp->gptConfig);
 }
