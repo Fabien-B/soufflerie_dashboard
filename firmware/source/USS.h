@@ -31,6 +31,8 @@ typedef enum {
 
 typedef struct {
     UARTDriver* uartp;      // UART driver
+    UARTConfig uartConfig;  // UART config
+    GPTConfig  gptConfig;   // GPT driver config
     uint32_t speed;         // UART baudrate
     uint8_t node_nb;        // node id
     usscb_t standard_cb;    // standard telegram received callback

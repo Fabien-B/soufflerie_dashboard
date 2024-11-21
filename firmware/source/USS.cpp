@@ -14,43 +14,25 @@
 
 // maximum telegram residual time = 1.5*(n+3)*character_time
 
+// A task telegram is the transfer of a complete net data block from the master to the slave.
+// A response telegram is the transfer of the complete net data block from the slave to the master
+
 
 static void char_received(UARTDriver *uartp, uint16_t c);
 static void telegram_received(UARTDriver *uartp);
 static void error_cb(UARTDriver *uartp, uartflags_t e);
 static void telegram_sent(UARTDriver *uartp);
-
 static void residual_timeout_cb(GPTDriver *gptp);
 
-UARTConfig rs485_conf = {
-  .txend1_cb = NULL,                // End of transmission buffer callback.
-  .txend2_cb = telegram_sent,       //Physical end of transmission callback.
-  .rxend_cb = telegram_received,    //Receive buffer filled callback.
-  .rxchar_cb = char_received,       //Character received while out if the @p UART_RECEIVE state.
-  .rxerr_cb = error_cb,             //Receive error callback.
 
-  /* End of the mandatory fields.*/
-
-  .timeout_cb=NULL, //Receiver timeout callback.
-  /**
-   * @brief   Receiver timeout value in terms of number of bit duration.
-   * @details Set it to 0 when you want to handle idle interrupt instead of
-   *          hardware timeout.
-   */
-  .timeout = 0,
-
-  .speed = 115200,
-  .cr1 = USART_CR1_PCE,
-  .cr2 = USART_CR2_STOP1_BITS | USART_CR2_LINEN,
-  .cr3 = 0,
-};
-
-GPTConfig gptconf = {
-    .frequency=115200,
-    .callback = residual_timeout_cb,
-    .cr2 = 0,
-    .dier = 0,
-};
+/***
+ *      _____    _                                  ____  __  __
+ *     |_   _|__| | ___  __ _ _ __ __ _ _ __ ___   |  _ \ \ \/ /
+ *       | |/ _ \ |/ _ \/ _` | '__/ _` | '_ ` _ \  | |_) | \  / 
+ *       | |  __/ |  __/ (_| | | | (_| | | | | | | |  _ <  /  \ 
+ *       |_|\___|_|\___|\__, |_|  \__,_|_| |_| |_| |_| \_\/_/\_\
+ *                      |___/                                   
+ */
 
 
 /**
@@ -98,7 +80,7 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
     switch (ussp->rxState)
     {
     case USS_RX_STX:
-        if(c == USS_STX) {   // start of telegram !
+        if(c == USS_STX) {   // start of telegram
             ussp->rxState = USS_RX_LGE;
         }
     break;
@@ -201,18 +183,47 @@ static void telegram_sent(UARTDriver *uartp) {
     ussp->txState = USS_TX_IDLE;
 }
 
+
+
+/***
+ *      ____  _             _   
+ *     / ___|| |_ __ _ _ __| |_ 
+ *     \___ \| __/ _` | '__| __|
+ *      ___) | || (_| | |  | |_ 
+ *     |____/ \__\__,_|_|   \__|
+ *                              
+ */
+
+
 void ussStart(USSDriver *ussp, USSConfig *usscfg)
 {
+    // UART driver config
+    usscfg->uartConfig.txend1_cb = NULL;                // End of transmission buffer callback.
+    usscfg->uartConfig.txend2_cb = telegram_sent;       //Physical end of transmission callback.
+    usscfg->uartConfig.rxend_cb = telegram_received;    //Receive buffer filled callback.
+    usscfg->uartConfig.rxchar_cb = char_received;       //Character received while out if the @p UART_RECEIVE state.
+    usscfg->uartConfig.rxerr_cb = error_cb;             //Receive error callback.
+    usscfg->uartConfig.timeout_cb = NULL;
+    usscfg->uartConfig.timeout = 0;
+    usscfg->uartConfig.speed = usscfg->speed;
+    usscfg->uartConfig.cr1 = USART_CR1_PCE;
+    usscfg->uartConfig.cr2 = USART_CR2_STOP1_BITS | USART_CR2_LINEN;
+    usscfg->uartConfig.cr3 = 0;
+
+    // GPT driver config
+    usscfg->gptConfig.frequency = usscfg->speed;
+    usscfg->gptConfig.callback = residual_timeout_cb;
+    usscfg->gptConfig.cr2 = 0;
+    usscfg->gptConfig.dier = 0;
+
     ussp->config = usscfg;
     usscfg->uartp->ussp = ussp;
     ussp->rxState = USS_RX_STX;
     ussp->txState = USS_TX_IDLE;
     ussp->status = USS_OK;
     chBSemObjectInit(&ussp->tx_sem, true);
-    rs485_conf.speed = usscfg->speed;
-    gptconf.frequency = usscfg->speed;
-    chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
-    uartStart(ussp->config->uartp, &rs485_conf);
-    gptStart(ussp->gpt, &gptconf);
 
+    chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
+    uartStart(ussp->config->uartp, &usscfg->uartConfig);
+    gptStart(ussp->gpt, &usscfg->gptConfig);
 }
