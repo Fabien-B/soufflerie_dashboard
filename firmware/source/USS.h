@@ -4,7 +4,7 @@
 
 #define USS_STX 0x02
 
-#define USS_RX_BUF_LEN 50
+#define USS_TELEGRAM_LEN 50
 
 
 typedef struct USSDriver_private USSDriver;
@@ -42,16 +42,21 @@ typedef struct {
 } USSConfig;
 
 
+typedef struct {
+    uint8_t stx;
+    uint8_t lge;
+    uint8_t adr;
+    uint8_t data[USS_TELEGRAM_LEN];
+} __attribute__((packed)) Telegram_t;
+
 struct USSDriver_private{
     USSConfig* config;
     USSRxState rxState;
     USSTxState txState;
     USSError status;
     
-    uint8_t lge;
-    uint8_t adr;
-    uint8_t rxBuffer[USS_RX_BUF_LEN];
-    uint8_t txBuffer[USS_RX_BUF_LEN];
+    Telegram_t rxTelegram;
+    Telegram_t txTelegram;
 
     binary_semaphore_t tx_sem;
     thread_t tx_thread;

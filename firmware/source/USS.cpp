@@ -47,8 +47,7 @@ static void txThd(void* arg) {
     {
         chBSemWait(&ussp->tx_sem);
         chThdSleepMicroseconds(response_delay);
-        uint8_t lge = ussp->txBuffer[1];
-        uartStartSend(ussp->config->uartp, lge+2, ussp->txBuffer);
+        uartStartSend(ussp->config->uartp, ussp->txTelegram.lge+2, (uint8_t*)&ussp->txTelegram);
         ussp->txState = USS_TX_SENDING;
     }
 }
@@ -81,16 +80,17 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
     {
     case USS_RX_STX:
         if(c == USS_STX) {   // start of telegram
+            ussp->rxTelegram.stx = c;
             ussp->rxState = USS_RX_LGE;
         }
     break;
     case USS_RX_LGE:
     {
-        ussp->lge = c;
+        ussp->rxTelegram.lge = c;
         // setup DMA to receive telegram in ussp->buffer
         chSysLockFromISR();
-        uartStartReceiveI(uartp, ussp->lge, &ussp->rxBuffer);
-        uint16_t residual_time = 1.5*(ussp->lge)*11;
+        uartStartReceiveI(uartp, ussp->rxTelegram.lge, (uint8_t*)&ussp->rxTelegram.adr);
+        uint16_t residual_time = 1.5*ussp->rxTelegram.lge*11;
         gptStartOneShotI(ussp->gpt, residual_time);
         chSysUnlockFromISR();
         ussp->rxState = USS_RX_RESIDUAL;
@@ -107,15 +107,13 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
 }
 
 uint8_t getBCC(USSDriver* ussp) {
-    return ussp->rxBuffer[ussp->lge-1];
+    return ussp->rxTelegram.data[ussp->rxTelegram.lge-2];
 }
 
 uint8_t computeBCC(USSDriver* ussp) {
     uint8_t bcc = 0;
-    bcc ^= USS_STX;
-    bcc ^= ussp->lge;
-    for(uint8_t i=0; i<ussp->lge-1; i++) {
-        bcc ^= ussp->rxBuffer[i];
+    for(uint8_t i=0; i<ussp->rxTelegram.lge+2; i++) {
+        bcc ^= ((uint8_t*)&ussp->rxTelegram)[i];
     }
     return bcc;
 }
@@ -132,10 +130,9 @@ static void telegram_received(UARTDriver *uartp) {
         ussp->status = USS_BCC_MISMATCH;
         return;
     }
-    ussp->adr = ussp->rxBuffer[0];
 
     // special telegram
-    if(ussp->adr & 0x80) {
+    if(ussp->rxTelegram.adr & 0x80) {
         if(ussp->config->special_cb) {
             ussp->config->special_cb(ussp);
         }
@@ -144,16 +141,14 @@ static void telegram_received(UARTDriver *uartp) {
 
     // mirror telegram: The node number is evaluated and the
     // addressed slave returns the telegram, unchanged, to the master
-    if((ussp->adr & 0x40) && ((ussp->adr & 0x1F) == ussp->config->node_nb)) {
-        ussp->txBuffer[0] = USS_STX;
-        ussp->txBuffer[1] = ussp->lge;
-        memcpy(ussp->txBuffer+2, ussp->rxBuffer, ussp->lge);
+    if((ussp->rxTelegram.adr & 0x40) && ((ussp->rxTelegram.adr & 0x1F) == ussp->config->node_nb)) {
+        memcpy(&ussp->txTelegram, &ussp->rxTelegram, ussp->rxTelegram.lge+2);
         sendTelegram(ussp);
         return;
     }
 
     // broadcast telegram. Node number not evaluated
-    if(ussp->adr & 0x20) {
+    if(ussp->rxTelegram.adr & 0x20) {
         if(ussp->config->broadcast_cb) {
             ussp->config->broadcast_cb(ussp);
         }
@@ -161,7 +156,7 @@ static void telegram_received(UARTDriver *uartp) {
     }
 
     // standard data transfer. Node number is evaluated
-    if((ussp->adr & 0xE0) == 0 && ((ussp->adr & 0x1F) == ussp->config->node_nb)) {
+    if((ussp->rxTelegram.adr & 0xE0) == 0 && ((ussp->rxTelegram.adr & 0x1F) == ussp->config->node_nb)) {
         if(ussp->config->standard_cb) {
             ussp->config->standard_cb(ussp);
         }
@@ -182,6 +177,24 @@ static void telegram_sent(UARTDriver *uartp) {
     USSDriver* ussp = (USSDriver*)uartp->ussp;
     ussp->txState = USS_TX_IDLE;
 }
+
+
+/***
+ *          _       _                                            
+ *       __| | __ _| |_ __ _   _ __  _ __ ___   ___ ___  ___ ___ 
+ *      / _` |/ _` | __/ _` | | '_ \| '__/ _ \ / __/ _ \/ __/ __|
+ *     | (_| | (_| | || (_| | | |_) | | | (_) | (_|  __/\__ \__ \
+ *      \__,_|\__,_|\__\__,_| | .__/|_|  \___/ \___\___||___/___/
+ *                            |_|                                
+ */
+
+void data_process(USSDriver *ussp) {
+    // ussp->rxBuffer
+    // ussp->lge
+
+
+}
+
 
 
 
