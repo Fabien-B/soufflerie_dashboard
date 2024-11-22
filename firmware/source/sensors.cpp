@@ -58,7 +58,7 @@ static void sensorsThd(void*) {
     i2cStart(&I2CD2, &i2c2_conf);
 
     if(bmp3xxStart(&bmp3, &bmp3_conf) == MSG_OK) {
-        DebugTrace ("bmp init OK");
+        //DebugTrace ("bmp init OK");
     } else {
         DebugTrace ("bmp init FAIL");
     }
@@ -79,30 +79,19 @@ static void sensorsThd(void*) {
     
 
     while(true) {
-        if (bmp3xxFetch(&bmp3, BMP3_PRESS | BMP3_TEMP) == MSG_OK) {
-            DebugTrace("Temp=%.2f, Press=%.2f mB",
-            bmp3xxGetTemp(&bmp3), bmp3xxGetPressure(&bmp3)/100.0f);
-        } else {
+        if (bmp3xxFetch(&bmp3, BMP3_PRESS | BMP3_TEMP) != MSG_OK) {
             DebugTrace ("bmp fetch FAIL");
         }
 
 
-        if(sdp3xFetch(&sdp, SDP3X_pressure_temp) == MSG_OK) {
-            float dp = sdp3xGetPressure(&sdp);
-            float scale = sdp3xGetScale(&sdp);
-            DebugTrace("diff = %.2f  scale=%f", dp, scale);
-        } else {
+        if(sdp3xFetch(&sdp, SDP3X_pressure_temp) != MSG_OK) {
             DebugTrace ("SDP31 fetch FAIL");
         }
 
 
         if(sht4xSend(&sht, SHT4x_TEMP_RH_HI) == MSG_OK) {
             chThdSleepMilliseconds(10);
-            if(sht4xFetch(&sht) == MSG_OK) {
-                float temp = sht4xGetTemp(&sht);
-                float rh = sht4xGetRH(&sht);
-                DebugTrace("temp = %.2f  rh=%.2f", temp, rh);
-            } else {
+            if(sht4xFetch(&sht) != MSG_OK) {
                 DebugTrace ("SHT45 fetch command failed");
             }
         } else {
