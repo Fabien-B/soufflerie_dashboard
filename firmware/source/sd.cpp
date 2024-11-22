@@ -7,6 +7,8 @@
 thread_t* log_th_handle;
 bool log_status = false;
 
+FileDes log_data_fd;
+
 static THD_WORKING_AREA(waLog, 10000);
 void logThd(void*) {
   chRegSetThreadName("SdLogger");
@@ -25,12 +27,12 @@ void logThd(void*) {
     return;
   }
 
-  if(sdLogOpenLog(0, "test", "toto", 1, false, 0, false) != SDLOG_OK) {
+  if(sdLogOpenLog(&log_data_fd, "test", "toto", 1, false, 0, false) != SDLOG_OK) {
     DebugTrace("SD fail to open logfile");
     return;
   }
 
-  sdLogWriteLog(0,"tunnel_temp,temp,diff_p,pressure\n");
+  sdLogWriteLog(log_data_fd,"tunnel_temp,temp,diff_p,pressure\n");
   log_status = true;
 
   while(!chThdShouldTerminateX()) {
@@ -40,8 +42,8 @@ void logThd(void*) {
     float pressure = getAbsolutePressure();
     float diff_p = getDiffPressure();
 
-    if(sdLogWriteLog(0, "%f,%f,%f,%f\n", tunnel_temp, temp, diff_p, pressure) != SDLOG_OK) {
-      sdLogCloseLog(0);   // try to close log, but will probably fail
+    if(sdLogWriteLog(log_data_fd, "%f,%f,%f,%f\n", tunnel_temp, temp, diff_p, pressure) != SDLOG_OK) {
+      sdLogCloseLog(log_data_fd);   // try to close log, but will probably fail
       log_status = false;
       return;
     }
@@ -49,7 +51,7 @@ void logThd(void*) {
     chThdSleepMilliseconds(500);    
   }
 
-  sdLogCloseLog(0);
+  sdLogCloseLog(log_data_fd);
   log_status = false;
 
 }

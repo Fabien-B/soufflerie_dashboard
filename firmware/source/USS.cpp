@@ -131,6 +131,11 @@ static void telegram_received(UARTDriver *uartp) {
         return;
     }
 
+    // callback reacting to all telegrams
+    if(ussp->config->any_cb) {
+        ussp->config->any_cb(ussp);
+    }
+
     // special telegram
     if(ussp->rxTelegram.adr & 0x80) {
         if(ussp->config->special_cb) {

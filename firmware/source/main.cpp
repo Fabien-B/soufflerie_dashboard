@@ -47,7 +47,7 @@ static THD_FUNCTION(Thread1, arg) {
 }
 
 
-static THD_WORKING_AREA(waDisplay, 1000);
+
 
 /*
  * Application entry point.
@@ -67,12 +67,13 @@ int main(void) {
 
   sdStart(&SD6, &sd6_conf);
   startSensors();
+  startUI();
 
   /*
    * Creates the example thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1, NULL);
-  chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO + 1, displayThd, NULL);
+
 
   while (true) {
     chThdSleepMilliseconds(500);

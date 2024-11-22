@@ -4,6 +4,7 @@
 #include "sd.h"
 #include "stdutil++.hpp"
 #include "sdio.h"
+#include "uss_logger.h"
 
 
 #define RED 100, 0, 0
@@ -64,11 +65,10 @@ static void drawLayout(FdsDriver* fds) {
     txt_putStr(fds, "absolute", NULL);
     gfx_moveTo(fds, 0, 225);
     txt_putStr(fds, "pressure", NULL);
-
-
     
 }
 
+static THD_WORKING_AREA(waDisplay, 1000);
 void displayThd(void*) {
 
     char buffer[15];
@@ -161,4 +161,29 @@ void displayThd(void*) {
 
         chThdSleepMilliseconds(5);
     }
+}
+
+
+static THD_WORKING_AREA(waEncoderThd, 1000);
+void encoderThd(void*) {
+    chRegSetThreadName("encoderThd");
+    palEnableLineEvent(LINE_ENC_PUSH, PAL_EVENT_MODE_FALLING_EDGE);
+
+    bool log_state = false;
+
+    while(true) {
+        palWaitLineTimeout(LINE_ENC_PUSH, TIME_INFINITE);
+        if(log_state) {
+            stopLog();
+            stopUSSLog();
+        } else {
+            startLog();
+            startUSSLog();
+        }
+    }
+}
+
+void startUI() {
+    chThdCreateStatic(waDisplay, sizeof(waDisplay), NORMALPRIO + 1, displayThd, NULL);
+    chThdCreateStatic(waEncoderThd, sizeof(waEncoderThd), NORMALPRIO + 1, encoderThd, NULL);
 }

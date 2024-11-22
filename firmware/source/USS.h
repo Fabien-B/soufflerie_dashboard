@@ -37,6 +37,7 @@ typedef struct {
     usscb_t standard_cb;    // standard telegram received callback
     usscb_t broadcast_cb;   // broadcast telegram received callback
     usscb_t special_cb;     // special telegram received callback (probably NULL)
+    usscb_t any_cb;         // any telegram received callback
     void* user_data;
 } USSConfig;
 
@@ -74,8 +75,8 @@ typedef enum {
     USS_PWE_AK_RSP_PARAM_CHANGE_REPORT_DW,         // Parameter change report (double word)
     USS_PWE_AK_RSP_PARAM_CHANGE_REPORT_ARRAY_W,    // Parameter change report (array word)
     USS_PWE_AK_RSP_PARAM_CHANGE_REPORT_ARRAY_DW,  // Parameter change report (array double word)
-    USS_PWE_AK_RSP_RESERVED,                       // Reserve
-    USS_PWE_AK_RSP_RESERVED,                       // Reserve
+    USS_PWE_AK_RSP_RESERVED_1,                       // Reserve
+    USS_PWE_AK_RSP_RESERVED_2,                       // Reserve
     USS_PWE_AK_RSP_TRANSFER_TEXT,                  // Transfer text
 } pwe_ak_rps_t;
 
@@ -115,5 +116,6 @@ struct USSDriver_private{
     
 };
 
+void ussStart(USSDriver* ussp, const USSConfig* usscfg);
 
-void ussStart(USSDriver* ussp, USSConfig* usscfg);
+
