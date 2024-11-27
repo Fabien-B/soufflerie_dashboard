@@ -102,6 +102,7 @@ struct USSDriver_private{
     const USSConfig* config;
     UARTConfig uartConfig;  // UART config
     GPTConfig  gptConfig;   // GPT driver config
+    float gpt_freq;
     USSRxState rxState;
     USSTxState txState;
     USSError status;
@@ -110,12 +111,13 @@ struct USSDriver_private{
     Telegram_t txTelegram;
 
     binary_semaphore_t tx_sem;
-    thread_t tx_thread;
+    thread_t* tx_thread;
     THD_WORKING_AREA(waTxThread, 512);
 
     
 };
 
 void ussStart(USSDriver* ussp, const USSConfig* usscfg);
+void ussStop(USSDriver* ussp);
 
 

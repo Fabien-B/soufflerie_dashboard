@@ -3,3 +3,6 @@
 
 msg_t startUSSLog();
 void stopUSSLog();
+
+void startUSSListener();
+bool isLoggingUSS();

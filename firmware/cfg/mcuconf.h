@@ -45,7 +45,7 @@
 /*
  * Memory attributes settings.
  */
-#define STM32_NOCACHE_ENABLE                FALSE
+#define STM32_NOCACHE_ENABLE                TRUE
 #define STM32_NOCACHE_MPU_REGION            MPU_REGION_6
 #define STM32_NOCACHE_RBAR                  0x2004C000U
 #define STM32_NOCACHE_RASR                  MPU_RASR_SIZE_16K
@@ -406,7 +406,7 @@
 #define TRACE           TRUE
 
 #define CH_HEAP_SIZE (32*1024)
-#define CH_HEAP_USE_TLSF 1
+#define CH_HEAP_USE_TLSF 2
 
 
 #define SDLOG_QUEUE_BUCKETS    1024

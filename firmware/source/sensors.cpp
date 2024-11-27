@@ -24,7 +24,7 @@ I2CConfig i2c2_conf = {
 };
 
 
-Bmp3xxDriver bmp3;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 Bmp3xxConfig bmp3_conf = {
@@ -46,10 +46,11 @@ Bmp3xxConfig bmp3_conf = {
 #pragma GCC diagnostic pop
 
 
-Sdp3xDriver sdp;
-Sht4xDriver sht;
+Sdp3xDriver  IN_DMA_SECTION(sdp);
+Sht4xDriver  IN_DMA_SECTION(sht);
+Bmp3xxDriver IN_DMA_SECTION(bmp3);
 
-static THD_WORKING_AREA(waSensors, 1000);
+static IN_DMA_SECTION(THD_WORKING_AREA(waSensors, 2048));
 
 static void sensorsThd(void*) {
     chRegSetThreadName("sensorsThd");

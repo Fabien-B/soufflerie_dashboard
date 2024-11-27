@@ -20,6 +20,8 @@
 #include "stdutil++.hpp"
 #include "sensors.h"
 #include "sd.h"
+#include "ttyConsole.h"
+#include "uss_handler.h"
 
 
 SerialConfig sd6_conf = {
@@ -40,8 +42,8 @@ static THD_FUNCTION(Thread1, arg) {
   chRegSetThreadName("blinker");
   //palSetLine(LINE_LED1);
   while (true) {
-    palToggleLine(LINE_LED1);
-    palToggleLine(LINE_LED2);
+    // palToggleLine(LINE_LED1);
+    // palToggleLine(LINE_LED2);
     chThdSleepMilliseconds(200);
   }
 }
@@ -65,18 +67,20 @@ int main(void) {
   chSysInit();
   initHeap();
 
-  sdStart(&SD6, &sd6_conf);
+  consoleInit();
   startSensors();
+  startUSSListener();
   startUI();
+  
 
   /*
    * Creates the example thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1, NULL);
 
+  //consoleLaunch();
 
   while (true) {
     chThdSleepMilliseconds(500);
-    //DebugTrace("plop");
   }
 }

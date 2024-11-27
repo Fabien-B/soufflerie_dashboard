@@ -131,6 +131,9 @@ CSRC = $(ALLCSRC) \
        $(VARIOUS)/sdio.c \
        $(VARIOUS)/msg_queue.c \
        $(VARIOUS)/printf.c \
+       $(VARIOUS)/usb_serial.c \
+       $(VARIOUS)/microrl/microrl.c \
+       $(VARIOUS)/microrl/microrlShell.c \
        $(VARIOUS)/display4DS.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -200,6 +203,11 @@ $(CONFDIR)/board.h: $(CONFDIR)/board.cfg
 
 flash: build/ch.elf
 	bmpflash build/ch.elf
+
+dfu_flash: build/ch.bin
+	dfu-util -d 0483:df11 -c 1 -i 0 -a 0 -s 0x08000000:leave -D build/ch.bin
+
+
 #
 # Custom rules
 ##############################################################################

@@ -1,8 +1,14 @@
 #pragma once
 #include "hal.h"
 
-void startLog();
 
-void stopLog();
+bool startSdLog(systime_t timeout);
+void stopSdLog();
+bool sdLogInitialized();
 
-bool isLogging();
+
+msg_t startSensorLog();
+void stopSensorLog();
+bool isLoggingSensors();
+
+

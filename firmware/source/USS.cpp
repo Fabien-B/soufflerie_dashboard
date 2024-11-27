@@ -43,9 +43,12 @@ static void txThd(void* arg) {
     USSDriver* ussp = (USSDriver*)arg;
     // 2 character time, rounded up.
     uint32_t response_delay = 2*11*1000000/ussp->config->speed + 1;
-    while (!chThdShouldTerminateX())
+    while (true)
     {
         chBSemWait(&ussp->tx_sem);
+        if(chThdShouldTerminateX()) {
+            chThdExit(MSG_OK);
+        }
         chThdSleepMicroseconds(response_delay);
         uartStartSend(ussp->config->uartp, ussp->txTelegram.lge+2, (uint8_t*)&ussp->txTelegram);
         ussp->txState = USS_TX_SENDING;
@@ -69,7 +72,9 @@ static void error_cb(UARTDriver *uartp, uartflags_t e) {
     USSDriver* ussp = (USSDriver*)uartp->ussp;
     // stop receiving current telegram, if any
     ussp->rxState = USS_RX_STX;
-    uartStopReceive(uartp);
+    chSysLockFromISR();
+    uartStopReceiveI(uartp);
+    chSysUnlockFromISR();
 }
 
 
@@ -90,7 +95,7 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
         // setup DMA to receive telegram in ussp->buffer
         chSysLockFromISR();
         uartStartReceiveI(uartp, ussp->rxTelegram.lge, (uint8_t*)&ussp->rxTelegram.adr);
-        uint16_t residual_time = 1.5*ussp->rxTelegram.lge*11;
+        uint16_t residual_time = (1.5*ussp->rxTelegram.lge*11-1) * ussp->gpt_freq / ussp->config->speed;
         gptStartOneShotI(ussp->config->gpt, residual_time);
         chSysUnlockFromISR();
         ussp->rxState = USS_RX_RESIDUAL;
@@ -232,7 +237,8 @@ void ussStart(USSDriver *ussp, const USSConfig *usscfg)
     ussp->uartConfig.cr3 = 0;
 
     // GPT driver config
-    ussp->gptConfig.frequency = usscfg->speed;
+    ussp->gpt_freq = 100000;
+    ussp->gptConfig.frequency = (uint32_t)ussp->gpt_freq;
     ussp->gptConfig.callback = residual_timeout_cb;
     ussp->gptConfig.cr2 = 0;
     ussp->gptConfig.dier = 0;
@@ -244,7 +250,17 @@ void ussStart(USSDriver *ussp, const USSConfig *usscfg)
     ussp->status = USS_OK;
     chBSemObjectInit(&ussp->tx_sem, true);
 
-    chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
+    ussp->tx_thread = chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
     uartStart(ussp->config->uartp, &ussp->uartConfig);
     gptStart(ussp->config->gpt, &ussp->gptConfig);
+}
+
+
+void ussStop(USSDriver* ussp) {
+    chThdTerminate(ussp->tx_thread);
+    chBSemSignal(&ussp->tx_sem);
+    uartStop(ussp->config->uartp);
+    gptStop(ussp->config->gpt);
+    chThdWait(ussp->tx_thread);
+    ussp->tx_thread = NULL;
 }

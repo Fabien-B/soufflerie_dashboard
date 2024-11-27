@@ -4,7 +4,8 @@
 #include "sd.h"
 #include "stdutil++.hpp"
 #include "sdio.h"
-#include "uss_logger.h"
+#include "sd.h"
+#include "uss_handler.h"
 
 
 #define RED 100, 0, 0
@@ -27,6 +28,7 @@
 
 #define SD_X 230
 #define SD_Y 10
+
 PolyPoint GRPH_SD[] = {
     {SD_X-6, SD_Y-7},
     {SD_X+2, SD_Y-7},
@@ -37,6 +39,8 @@ PolyPoint GRPH_SD[] = {
 };
 #define GRPH_SD_LEN (sizeof(GRPH_SD)/sizeof(GRPH_SD[0]))
 
+#define USS_X 200
+#define USS_Y 10
 
 static void drawLayout(FdsDriver* fds) {
     fdsSetTextSizeMultiplier(fds, 1, 1);
@@ -68,8 +72,9 @@ static void drawLayout(FdsDriver* fds) {
     
 }
 
-static THD_WORKING_AREA(waDisplay, 1000);
+static THD_WORKING_AREA(waDisplay, 1024);
 void displayThd(void*) {
+    chRegSetThreadName("display");
 
     char buffer[15];
 
@@ -130,12 +135,22 @@ void displayThd(void*) {
             // SD card status
             gfx_rectangleFilled(&fds, SD_X-4, SD_Y-4, SD_X+4, SD_Y+4, BLACK_16b);
             fdsDrawPolyLine(&fds, GRPH_SD_LEN, GRPH_SD, 3);
-            if(isLogging()) {
+            if(isLoggingSensors()) {
                 gfx_circleFilled(&fds, SD_X, SD_Y, 4, RED_16b);
             } else {
                 if(!isCardInserted()) {
                     gfx_line(&fds,SD_X-4, SD_Y-4, SD_X+4, SD_Y+4, WHITE_16b);
                     gfx_line(&fds,SD_X-4, SD_Y+4, SD_X+4, SD_Y-4, WHITE_16b);
+                }
+            }
+
+            gfx_rectangleFilled(&fds, USS_X-4, USS_Y-4, USS_X+4, USS_Y+4, BLACK_16b);
+            if(isLoggingUSS()) {
+                gfx_circleFilled(&fds, USS_X, USS_Y, 4, YELLOW_16b);
+            } else {
+                if(!isCardInserted()) {
+                    gfx_line(&fds,USS_X-4, USS_Y-4, USS_X+4, USS_Y+4, WHITE_16b);
+                    gfx_line(&fds,USS_X-4, USS_Y+4, USS_X+4, USS_Y-4, WHITE_16b);
                 }
             }
 
@@ -164,9 +179,9 @@ void displayThd(void*) {
 }
 
 
-static THD_WORKING_AREA(waEncoderThd, 1000);
+static THD_WORKING_AREA(waEncoderThd, 4096);
 void encoderThd(void*) {
-    chRegSetThreadName("encoderThd");
+    chRegSetThreadName("encoder");
     palEnableLineEvent(LINE_ENC_PUSH, PAL_EVENT_MODE_FALLING_EDGE);
 
     bool log_state = false;
@@ -174,12 +189,21 @@ void encoderThd(void*) {
     while(true) {
         palWaitLineTimeout(LINE_ENC_PUSH, TIME_INFINITE);
         if(log_state) {
-            stopLog();
+            stopSensorLog();
             stopUSSLog();
+            stopSdLog();
         } else {
-            startLog();
+            startSensorLog();
             startUSSLog();
+
+            if(isLoggingSensors() && isLoggingUSS()) {
+                palToggleLine(LINE_LED2);
+            }
+            
+            
         }
+        log_state = isLoggingSensors() || isLoggingUSS();
+        chThdSleepMilliseconds(50);
     }
 }
 

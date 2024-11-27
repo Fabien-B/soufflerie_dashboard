@@ -14,7 +14,8 @@
             "servertype": "bmp",
             "BMPGDBSerialPort": "/dev/bmp-gdb",
             "svdFile": "/home/fabien/Documents/datasheets/MCUs/SVDs/STM32F722.svd",
-            "preLaunchTask": "Build $(gear)"
+            "preLaunchTask": "Build $(gear)",
+            "armToolchainPath": "/opt/arm-gnu-toolchain-13.2/bin"
         },
         {
             "name": "Cortex Attach",
@@ -27,6 +28,20 @@
             "BMPGDBSerialPort": "/dev/bmp-gdb",
             "svdFile": "/home/fabien/Documents/datasheets/MCUs/SVDs/STM32F722.svd",
             "preLaunchTask": "Build $(gear)"
+        },
+        {
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/ch.elf",
+            "name": "Debug with ST-Link",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none",
+            "servertype": "openocd",
+            "searchDir": ["/home/fabien/.platformio/packages/tool-openocd/openocd/scripts"],
+            "configFiles": ["interface/stlink.cfg", "target/stm32f7x.cfg"],
+            "serverpath": "/home/fabien/.platformio/packages/tool-openocd/bin/openocd",
+            "preLaunchCommands": ["make"]
         }
     ]
 }
