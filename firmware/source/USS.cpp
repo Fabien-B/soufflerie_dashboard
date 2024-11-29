@@ -232,7 +232,7 @@ void ussStart(USSDriver *ussp, const USSConfig *usscfg)
     ussp->uartConfig.timeout_cb = NULL;
     ussp->uartConfig.timeout = 0;
     ussp->uartConfig.speed = usscfg->speed;
-    ussp->uartConfig.cr1 = USART_CR1_PCE;
+    ussp->uartConfig.cr1 = USART_CR1_PCE | USART_CR1_M_0;   // parity enabled | 9 bits (including parity bit)
     ussp->uartConfig.cr2 = USART_CR2_STOP1_BITS | USART_CR2_LINEN;
     ussp->uartConfig.cr3 = 0;
 
