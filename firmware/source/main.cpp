@@ -31,19 +31,18 @@ SerialConfig sd6_conf = {
   .cr3 = 0
 };
 
+
 /*
  * This is a periodic thread that does absolutely nothing except flashing
  * a LED.
  */
-static THD_WORKING_AREA(waThread1, 128);
+static THD_WORKING_AREA(waThread1, 512);
 static THD_FUNCTION(Thread1, arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
-  //palSetLine(LINE_LED1);
+
   while (true) {
-    // palToggleLine(LINE_LED1);
-    // palToggleLine(LINE_LED2);
     chThdSleepMilliseconds(200);
   }
 }
@@ -78,7 +77,7 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 1, Thread1, NULL);
 
-  //consoleLaunch();
+  consoleLaunch();
 
   while (true) {
     chThdSleepMilliseconds(500);

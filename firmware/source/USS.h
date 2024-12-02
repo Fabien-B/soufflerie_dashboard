@@ -31,6 +31,7 @@ typedef enum {
 
 typedef struct {
     UARTDriver* uartp;      // UART driver
+    ioline_t rs485_en_line;
     GPTDriver* gpt;
     uint32_t speed;         // UART baudrate
     uint8_t node_nb;        // node id
@@ -38,6 +39,7 @@ typedef struct {
     usscb_t broadcast_cb;   // broadcast telegram received callback
     usscb_t special_cb;     // special telegram received callback (probably NULL)
     usscb_t any_cb;         // any telegram received callback
+    bool silent;            // set to true to never emit frames
     void* user_data;
 } USSConfig;
 

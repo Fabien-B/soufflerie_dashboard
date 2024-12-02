@@ -17,6 +17,11 @@
 // A task telegram is the transfer of a complete net data block from the master to the slave.
 // A response telegram is the transfer of the complete net data block from the slave to the master
 
+// Recommended data rates are:
+//   9600
+//   19200
+//   38400
+//   187500
 
 static void char_received(UARTDriver *uartp, uint16_t c);
 static void telegram_received(UARTDriver *uartp);
@@ -48,6 +53,10 @@ static void txThd(void* arg) {
         chBSemWait(&ussp->tx_sem);
         if(chThdShouldTerminateX()) {
             chThdExit(MSG_OK);
+        }
+        
+        if(!ussp->config->silent) {
+            palSetLine(ussp->config->rs485_en_line);
         }
         chThdSleepMicroseconds(response_delay);
         uartStartSend(ussp->config->uartp, ussp->txTelegram.lge+2, (uint8_t*)&ussp->txTelegram);
@@ -102,8 +111,8 @@ static void char_received(UARTDriver *uartp, uint16_t c) {
     }
     break;
     case USS_RX_RESIDUAL:
-        // should no happens (I suppose)
-        //chSysHalt("USS received byte while in residual");
+    // should no happens (I suppose)
+     chSysHalt("USS received byte while in residual");
     break;
     
     default:
@@ -117,7 +126,7 @@ uint8_t getBCC(USSDriver* ussp) {
 
 uint8_t computeBCC(USSDriver* ussp) {
     uint8_t bcc = 0;
-    for(uint8_t i=0; i<ussp->rxTelegram.lge+2; i++) {
+    for(uint8_t i=0; i<ussp->rxTelegram.lge+1; i++) {
         bcc ^= ((uint8_t*)&ussp->rxTelegram)[i];
     }
     return bcc;
@@ -125,12 +134,12 @@ uint8_t computeBCC(USSDriver* ussp) {
 
 static void telegram_received(UARTDriver *uartp) {
     USSDriver* ussp = (USSDriver*)uartp->ussp;
+    ussp->rxState = USS_RX_STX;
     // cancel the residual time timeout
     chSysLockFromISR();
     gptStopTimerI(ussp->config->gpt);
     chSysUnlockFromISR();
     
-
     if(getBCC(ussp) != computeBCC(ussp)) {
         ussp->status = USS_BCC_MISMATCH;
         return;
@@ -189,6 +198,7 @@ static void residual_timeout_cb(GPTDriver *gptp) {
 static void telegram_sent(UARTDriver *uartp) {
     USSDriver* ussp = (USSDriver*)uartp->ussp;
     ussp->txState = USS_TX_IDLE;
+    palClearLine(ussp->config->rs485_en_line);
 }
 
 
@@ -251,6 +261,7 @@ void ussStart(USSDriver *ussp, const USSConfig *usscfg)
     chBSemObjectInit(&ussp->tx_sem, true);
 
     ussp->tx_thread = chThdCreateStatic(ussp->waTxThread, sizeof(ussp->waTxThread), NORMALPRIO + 1, txThd, ussp);
+    palClearLine(usscfg->rs485_en_line);
     uartStart(ussp->config->uartp, &ussp->uartConfig);
     gptStart(ussp->config->gpt, &ussp->gptConfig);
 }
