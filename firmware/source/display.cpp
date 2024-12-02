@@ -37,10 +37,29 @@ PolyPoint GRPH_SD[] = {
     {SD_X-6, SD_Y+7},
     {SD_X-6, SD_Y-7},
 };
+
+uint16_t VSD_X[] = {
+    __builtin_bswap16(SD_X-6),
+    __builtin_bswap16(SD_X+2),
+    __builtin_bswap16(SD_X+6),
+    __builtin_bswap16(SD_X+6),
+    __builtin_bswap16(SD_X-6),
+    __builtin_bswap16(SD_X-6),
+};
+uint16_t VSD_Y[] = {
+    __builtin_bswap16(SD_Y-7),
+    __builtin_bswap16(SD_Y-7),
+    __builtin_bswap16(SD_Y-2),
+    __builtin_bswap16(SD_Y+7),
+    __builtin_bswap16(SD_Y+7),
+    __builtin_bswap16(SD_Y-7),
+};
 #define GRPH_SD_LEN (sizeof(GRPH_SD)/sizeof(GRPH_SD[0]))
 
-#define USS_X 200
-#define USS_Y 10
+#define SD_LOG_X 170
+#define SD_LOG_Y 10
+#define USS_LOG_X 200
+#define USS_LOG_Y 10
 
 static void drawLayout(FdsDriver* fds) {
     fdsSetTextSizeMultiplier(fds, 1, 1);
@@ -70,6 +89,19 @@ static void drawLayout(FdsDriver* fds) {
     gfx_moveTo(fds, 0, 225);
     txt_putStr(fds, "pressure", NULL);
     
+}
+
+void drawLoggingStatus(FdsDriver* fds, uint16_t x, uint16_t y, uint16_t color, bool status) {
+    gfx_rectangleFilled(fds, x-4, y-4, x+4, y+4, BLACK_16b);
+    if(status) {
+        gfx_circleFilled(fds, x, y, 4, color);
+    } else {
+        gfx_circle(fds, x, y, 4, color);
+        // if(!isCardInserted()) {
+        //     gfx_line(fds,x-4, y-4, x+4, y+4, WHITE_16b);
+        //     gfx_line(fds,x-4, y+4, x+4, y-4, WHITE_16b);
+        // }
+    }
 }
 
 static THD_WORKING_AREA(waDisplay, 1024);
@@ -131,29 +163,21 @@ void displayThd(void*) {
             chsnprintf(buffer, 15, "%6.1f hPa", pressure);
             gfx_moveTo(&fds, 80, 215);
             txt_putStr(&fds, buffer, NULL);
-
-            // SD card status
+            
             gfx_rectangleFilled(&fds, SD_X-4, SD_Y-4, SD_X+4, SD_Y+4, BLACK_16b);
-            fdsDrawPolyLine(&fds, GRPH_SD_LEN, GRPH_SD, 3);
-            if(isLoggingSensors()) {
-                gfx_circleFilled(&fds, SD_X, SD_Y, 4, RED_16b);
+            if(isCardInserted()) {
+                gfx_polygonFilled(&fds, GRPH_SD_LEN-1, VSD_X, VSD_Y, WHITE_16b);
             } else {
-                if(!isCardInserted()) {
-                    gfx_line(&fds,SD_X-4, SD_Y-4, SD_X+4, SD_Y+4, WHITE_16b);
-                    gfx_line(&fds,SD_X-4, SD_Y+4, SD_X+4, SD_Y-4, WHITE_16b);
-                }
+                gfx_polygon(&fds, GRPH_SD_LEN-1, VSD_X, VSD_Y, WHITE_16b);
+                gfx_line(&fds,SD_X-4, SD_Y-4, SD_X+4, SD_Y+4, WHITE_16b);
+                gfx_line(&fds,SD_X-4, SD_Y+4, SD_X+4, SD_Y-4, WHITE_16b);
             }
+            // fdsDrawPolyLine(&fds, GRPH_SD_LEN, GRPH_SD, 3);
 
-            gfx_rectangleFilled(&fds, USS_X-4, USS_Y-4, USS_X+4, USS_Y+4, BLACK_16b);
-            if(isLoggingUSS()) {
-                gfx_circleFilled(&fds, USS_X, USS_Y, 4, YELLOW_16b);
-            } else {
-                if(!isCardInserted()) {
-                    gfx_line(&fds,USS_X-4, USS_Y-4, USS_X+4, USS_Y+4, WHITE_16b);
-                    gfx_line(&fds,USS_X-4, USS_Y+4, USS_X+4, USS_Y-4, WHITE_16b);
-                }
-            }
 
+
+            drawLoggingStatus(&fds, SD_LOG_X, SD_LOG_Y, RED_16b, isLoggingSensors());
+            drawLoggingStatus(&fds, USS_LOG_X, USS_LOG_Y, YELLOW_16b, isLoggingUSS());
         }
 
 
